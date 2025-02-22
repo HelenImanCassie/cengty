@@ -1,0 +1,59 @@
+name: CENTURY
+on:   
+  push:
+
+jobs:
+  run-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        build: [A.1, A.2]
+        flag: [A, B, C, D, E, F, G, H, I, J]
+    steps: 
+      - uses: actions/checkout@v4
+      - name: running
+        continue-on-error: true
+        run: echo hello
+  build-matrix:
+    needs: run-test
+    runs-on: ubuntu-24.04
+    steps:
+      - id: set-matrix
+        run: |
+            echo 'meta_matrix1=["java"]' >> $GITHUB_OUTPUT
+            echo 'meta_matrix2=["1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7"]' >> $GITHUB_OUTPUT
+            echo 'meta_matrix3=["2.1", "2.2", "2.3"]' >> $GITHUB_OUTPUT
+
+    outputs:
+      meta_matrix1: ${{ steps.set-matrix.outputs.meta_matrix1 }}
+      meta_matrix2: ${{ steps.set-matrix.outputs.meta_matrix2 }}
+      meta_matrix3: ${{ steps.set-matrix.outputs.meta_matrix3 }}
+
+  run-matrix:
+    needs: build-matrix
+    strategy:
+      fail-fast: false
+      matrix:
+        meta1: ${{ fromJson(needs.build-matrix.outputs.meta_matrix1) }}
+        meta2: ${{ fromJson(needs.build-matrix.outputs.meta_matrix2) }}
+        meta3: ${{ fromJson(needs.build-matrix.outputs.meta_matrix3) }}
+        operating-system: [ubuntu-24.04]
+
+    runs-on: ${{ matrix.operating-system }}
+    timeout-minutes: 360
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+
+    - name: Set Python3
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Cek-Version
+      continue-on-error: true
+      run: python3 -V
+      if: |
+        matrix.operating-system == 'ubuntu-24.04'
